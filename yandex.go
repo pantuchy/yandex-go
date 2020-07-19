@@ -13,8 +13,9 @@ import (
 )
 
 type Yandex struct {
-	ShopId    string
-	SecretKey string
+	ShopId     string
+	SecretKey  string
+	OAuthToken string
 }
 
 type HttpRequest struct {
@@ -23,6 +24,7 @@ type HttpRequest struct {
 	ShopId         string
 	SecretKey      string
 	IdempotenceKey string
+	OAuthToken     string
 	Data           url.Values
 }
 
@@ -50,7 +52,12 @@ func (r *HttpRequest) SendRequest() ([]byte, error) {
 	defer fasthttp.ReleaseRequest(req)
 	defer fasthttp.ReleaseResponse(res)
 
-	req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.ShopId+":"+r.SecretKey)))
+	if len(r.OAuthToken) > 0 {
+		req.Header.Set("Authorization", "Bearer "+r.OAuthToken)
+	} else {
+		req.Header.Set("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(r.ShopId+":"+r.SecretKey)))
+	}
+
 	req.Header.Set("Idempotence-Key", r.IdempotenceKey)
 	req.Header.SetRequestURI(baseURL + r.Path)
 	req.Header.SetMethod(strings.ToUpper(r.Method))
